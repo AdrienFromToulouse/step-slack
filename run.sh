@@ -32,7 +32,7 @@ fi
 # check if this event is a build or deploy
 if [ -n "$DEPLOY" ]; then
   # its a deploy!
-  export ACTION="deploy"
+  export ACTION="deploy-"$WERCKER_DEPLOYTARGET_NAME
   export ACTION_URL=$WERCKER_DEPLOY_URL
 else
   # its a build!
@@ -40,11 +40,7 @@ else
   export ACTION_URL=$WERCKER_BUILD_URL
 fi
 
-# shellcheck disable=SC2018
-# shellcheck disable=SC2019
-WERCKER_RESULT=$(echo "$WERCKER_RESULT" | tr 'a-z' 'A-Z')
-
-export MESSAGE="<$ACTION_URL|$ACTION> for \`$WERCKER_APPLICATION_NAME\` has *$WERCKER_RESULT* on branch \`$WERCKER_GIT_BRANCH\`"
+export MESSAGE="<$ACTION_URL|$ACTION> for *$WERCKER_APPLICATION_NAME* has *$WERCKER_RESULT* on branch *$WERCKER_GIT_BRANCH*"
 export FALLBACK="$ACTION for $WERCKER_APPLICATION_NAME has $WERCKER_RESULT on branch $WERCKER_GIT_BRANCH"
 export COLOR="good"
 
@@ -59,7 +55,24 @@ json="{"
 
 # channels are optional, dont send one if it wasnt specified
 if [ -n "$WERCKER_SLACK_NOTIFIER_BL_CHANNEL" ]; then
-    json=$json"\"channel\": \"#$WERCKER_SLACK_NOTIFIER_BL_CHANNEL\","
+  json=$json"\"channel\": \"#$WERCKER_SLACK_NOTIFIER_BL_CHANNEL\","
+fi
+
+fields=""
+
+if [ -n "$WERCKER_DEPLOYTARGET_NAME" ]; then
+fields=",\"fields\":[
+    {
+      \"title\": \"Stage\",
+      \"value\": \"$WERCKER_DEPLOYTARGET_NAME\",
+      \"short\": \"true\"
+    },
+    {
+      \"title\": \"Region\",
+      \"value\": \"$AWS_REGION\",
+      \"short\": \"true\"
+    }
+  ]"
 fi
 
 json=$json"
@@ -74,19 +87,8 @@ json=$json"
         \"mrkdwn_in\": [
           \"text\"
         ],
-        \"short\": \"false\",
-        \"fields\":[
-          {
-            \"title\": \"Stage\",
-            \"value\": \"$SLS_STAGE\",
-            \"short\": \"true\"
-          },
-          {
-            \"title\": \"Region\",
-            \"value\": \"$AWS_REGION\",
-            \"short\": \"true\"
-          }
-        ]
+        \"short\": \"false\"
+        $fields
       }
     ]
 }"

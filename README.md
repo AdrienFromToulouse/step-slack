@@ -39,14 +39,6 @@ The MIT License (MIT)
 
 # Changelog
 
-## 1.2.0
-
-- added `branch` option
-
-## 1.1.0
-
-- `channel` is now optional (wercker/step-slack#5)
-
-## 1.0.0
+## 0.0.1
 
 - Initial release

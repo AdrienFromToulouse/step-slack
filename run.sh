@@ -21,6 +21,9 @@ if [ -z "$WERCKER_SLACK_NOTIFIER_BL_ICON_URL" ]; then
   export WERCKER_SLACK_NOTIFIER_BL_ICON_URL="https://secure.gravatar.com/avatar/a08fc43441db4c2df2cef96e0cc8c045?s=140"
 fi
 
+IFS='-' read -a DEPLOYTARGET_NAME_ARRAY <<< "$WERCKER_DEPLOYTARGET_NAME"
+SLS_STAGE="${DEPLOYTARGET_NAME_ARRAY[1]}"
+
 if [ -z "$SLS_STAGE" ]; then
   SLS_STAGE="None"
 fi
@@ -32,11 +35,11 @@ fi
 # check if this event is a build or deploy
 if [ -n "$DEPLOY" ]; then
   # its a deploy!
-  export ACTION="deploy-"$WERCKER_DEPLOYTARGET_NAME
+  export ACTION=$WERCKER_DEPLOYTARGET_NAME
   export ACTION_URL=$WERCKER_DEPLOY_URL
 else
   # its a build!
-  export ACTION="build"
+  export ACTION=$WERCKER_DEPLOYTARGET_NAME
   export ACTION_URL=$WERCKER_BUILD_URL
 fi
 
@@ -64,7 +67,7 @@ if [ -n "$WERCKER_DEPLOYTARGET_NAME" ]; then
 fields=",\"fields\":[
     {
       \"title\": \"Stage\",
-      \"value\": \"$WERCKER_DEPLOYTARGET_NAME\",
+      \"value\": \"$SLS_STAGE\",
       \"short\": \"true\"
     },
     {
@@ -102,9 +105,9 @@ fi
 
 # skip notifications if not on the right branch
 if [ -n "$WERCKER_SLACK_NOTIFIER_BL_BRANCH" ]; then
-    if [ "$WERCKER_SLACK_NOTIFIER_BL_BRANCH" != "$WERCKER_GIT_BRANCH" ]; then
-        return 0
-    fi
+  if [ "$WERCKER_SLACK_NOTIFIER_BL_BRANCH" != "$WERCKER_GIT_BRANCH" ]; then
+    return 0
+  fi
 fi
 
 # post the result to the slack webhook
